@@ -146,15 +146,6 @@ class SessionService {
       // 활성 세션 확인
       const activeSessionKey = this.getActiveSessionKey(userId);
       const activeSessionId = await redisClientInstance.get(activeSessionKey);
-      console.log(
-        'Session validation step - activeSessionId:',
-        activeSessionId
-      );
-      console.log('Active session check:', {
-        userId,
-        sessionId,
-        activeSessionId,
-      });
 
       if (!activeSessionId || activeSessionId !== sessionId) {
         console.log('Session validation failed:', {

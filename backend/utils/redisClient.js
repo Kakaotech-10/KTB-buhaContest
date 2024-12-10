@@ -18,6 +18,7 @@ class RedisClient {
       // Redis 클러스터에 연결
       const nodes = redisClusterNodes.split(',').map((node) => {
         const [host, port] = node.split(':');
+        console.log('Parsed node:', { host, port });
         return { host, port: Number(port) };
       });
 
@@ -35,13 +36,21 @@ class RedisClient {
         slotsRefreshInterval: 10000,
       });
 
+      // 클러스터 연결 후 갱신 처리
       this.cluster.on('connect', () => {
         console.log('Redis Cluster Connected');
         this.isConnected = true;
       });
 
-      const info = await this.cluster.info();
-      console.log('Redis Cluster Info:', info);
+      this.cluster.on('node added', (node) => {
+        console.log(`Node added: ${node}`);
+        // 필요한 경우, 클러스터 상태 갱신 코드 추가 가능
+      });
+
+      this.cluster.on('node removed', (node) => {
+        console.log(`Node removed: ${node}`);
+        // 필요한 경우, 클러스터 상태 갱신 코드 추가 가능
+      });
 
       this.cluster.on('error', (err) => {
         console.error('Redis Cluster Error:', err);

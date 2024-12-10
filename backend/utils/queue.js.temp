@@ -10,8 +10,13 @@ const messageQueue = new Queue('messageQueue', {
     redisOptions: {
       lazyConnect: false,
     },
+    // 큐가 연결을 관리하도록 설정
+    redis: {
+      retryStrategy: (times) => {
+        return Math.min(times * 50, 2000); // 재시도 전략 설정
+      },
+    },
   },
 });
-
 
 module.exports = messageQueue;
