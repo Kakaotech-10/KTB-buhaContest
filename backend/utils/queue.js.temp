@@ -1,0 +1,16 @@
+const Queue = require('bull');
+const { redisClusterNodes } = require('../config/keys');
+
+const messageQueue = new Queue('messageQueue', {
+  redis: {
+    nodes: redisClusterNodes.split(',').map((node) => {
+      const [host, port] = node.split(':');
+      return { host, port: Number(port) };
+    }),
+    redisOptions: {
+      lazyConnect: false,
+    },
+  },
+});
+
+module.exports = messageQueue;
