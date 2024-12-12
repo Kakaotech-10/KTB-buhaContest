@@ -60,17 +60,17 @@ function NewChatRoom() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+  
     if (!formData.name.trim()) {
       setError('채팅방 이름을 입력해주세요.');
       return;
     }
-
+  
     if (formData.hasPassword && !formData.password) {
       setError('비밀번호를 입력해주세요.');
       return;
     }
-
+  
     if (!currentUser?.token) {
       setError('인증 정보가 없습니다. 다시 로그인해주세요.');
       return;
@@ -80,7 +80,6 @@ function NewChatRoom() {
       setLoading(true);
       setError('');
 
-      // 채팅방 생성
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rooms`, {
         method: 'POST',
         headers: {
@@ -112,14 +111,12 @@ function NewChatRoom() {
       }
 
       const { data } = await response.json();
-      
       // 생성된 채팅방에 자동으로 입장
       await joinRoom(data._id, formData.hasPassword ? formData.password : undefined);
 
     } catch (error) {
       console.error('Room creation/join error:', error);
       setError(error.message);
-      
       if (error.message.includes('인증') || error.message.includes('만료')) {
         authService.logout();
         router.push('/');
@@ -128,6 +125,7 @@ function NewChatRoom() {
       setLoading(false);
     }
   };
+  
 
   const handleSwitchChange = (e) => {
     const checked = e.target.checked;

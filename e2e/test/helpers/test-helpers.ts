@@ -32,7 +32,7 @@ export class TestHelpers {
     const apiKey = process.env.OPENAI_API_KEY || '';
     this.aiService = new AIService({
       apiKey,
-      model: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
     });
     this.messageService = new MessageService(apiKey);
   }

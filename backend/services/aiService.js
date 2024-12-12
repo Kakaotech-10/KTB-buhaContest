@@ -47,7 +47,7 @@ class AIService {
       callbacks.onStart();
 
       const response = await this.openaiClient.post('/chat/completions', {
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }

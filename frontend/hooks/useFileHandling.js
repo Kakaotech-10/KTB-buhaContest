@@ -36,6 +36,8 @@ export const useFileHandling = (socketRef, currentUser, router, handleSessionErr
         throw new Error(uploadResponse.message || '파일 업로드에 실패했습니다.');
       }
 
+      const uploadedFile = uploadResponse.data.file;
+
       await socketRef.current.emit('chatMessage', {
         room: roomId,
         type: 'file',
@@ -45,7 +47,8 @@ export const useFileHandling = (socketRef, currentUser, router, handleSessionErr
           filename: uploadResponse.data.file.filename,
           originalname: uploadResponse.data.file.originalname,
           mimetype: uploadResponse.data.file.mimetype,
-          size: uploadResponse.data.file.size
+          size: uploadResponse.data.file.size,
+          fileUrl: uploadResponse.data.file.fileUrl
         }
       });
 

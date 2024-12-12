@@ -11,52 +11,18 @@ class RedisClient {
     if (this.isConnected && this.cluster) {
       return this.cluster;
     }
-
     try {
       console.log('Connecting to Redis Cluster...');
-
-      // Redis 클러스터에 연결
       const nodes = redisClusterNodes.split(',').map((node) => {
         const [host, port] = node.split(':');
-        console.log('Parsed node:', { host, port });
         return { host, port: Number(port) };
       });
-
       this.cluster = new Redis.Cluster(nodes, {
-        redisOptions: {
-          reconnectOnError: (err) => {
-            console.error('Redis Cluster reconnecting due to error:', err);
-            return true;
-          },
-          maxRetriesPerRequest: 5,
-          enableReadyCheck: true,
-          lazyConnect: false,
-        },
-        slotsRefreshTimeout: 2000,
-        slotsRefreshInterval: 10000,
+        redisOptions: { reconnectOnError: () => true },
       });
-
-      // 클러스터 연결 후 갱신 처리
       this.cluster.on('connect', () => {
-        console.log('Redis Cluster Connected');
         this.isConnected = true;
       });
-
-      this.cluster.on('node added', (node) => {
-        console.log(`Node added: ${node}`);
-        // 필요한 경우, 클러스터 상태 갱신 코드 추가 가능
-      });
-
-      this.cluster.on('node removed', (node) => {
-        console.log(`Node removed: ${node}`);
-        // 필요한 경우, 클러스터 상태 갱신 코드 추가 가능
-      });
-
-      this.cluster.on('error', (err) => {
-        console.error('Redis Cluster Error:', err);
-        this.isConnected = false;
-      });
-
       return this.cluster;
     } catch (error) {
       console.error('Redis Cluster connection error:', error);

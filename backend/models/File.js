@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const AWS = require('aws-sdk');
+const s3 = new AWS.S3(); 
 
 const FileSchema = new mongoose.Schema({
   filename: { 
@@ -77,10 +79,13 @@ FileSchema.index({ filename: 1, user: 1 }, { unique: true });
 // 파일 삭제 전 처리
 FileSchema.pre('remove', async function(next) {
   try {
-    const fs = require('fs').promises;
-    if (this.path) {
-      await fs.unlink(this.path);
-    }
+    // S3에서 파일 삭제
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: `uploads/${this.filename}`
+    };
+
+    await s3.deleteObject(params).promise(); // S3에서 파일 삭제
     next();
   } catch (error) {
     console.error('File removal error:', error);

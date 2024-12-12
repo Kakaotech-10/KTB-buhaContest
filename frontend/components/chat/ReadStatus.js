@@ -9,8 +9,8 @@ const ReadStatus = ({
   className = '',
   socketRef = null,
   messageId = null,
-  messageRef = null, // 메시지 요소의 ref 추가
-  currentUserId = null // 현재 사용자 ID 추가
+  messageRef = null, 
+  currentUserId = null 
 }) => {
   const [currentReaders, setCurrentReaders] = useState(readers || []);
   const [tooltipOpen, setTooltipOpen] = useState(false);
@@ -31,12 +31,7 @@ const ReadStatus = ({
   }, [participants, currentReaders, messageType]);
 
   // 읽지 않은 참여자 수 계산
-  const unreadCount = useMemo(() => {
-    if (messageType === 'system') {
-      return 0;
-    }
-    return unreadParticipants.length;
-  }, [unreadParticipants.length, messageType]);
+  const unreadCount = unreadParticipants.length;
 
   // 메시지를 읽음으로 표시하는 함수
   const markMessageAsRead = useCallback(async () => {
@@ -103,9 +98,7 @@ const ReadStatus = ({
     observerRef.current.observe(messageRef.current);
 
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
+      observerRef.current?.disconnect();
     };
   }, [messageRef, currentUserId, hasMarkedAsRead, messageType, currentReaders, markMessageAsRead]);
 
@@ -156,10 +149,8 @@ const ReadStatus = ({
     socketRef.current.on('participantsUpdate', handleParticipantsUpdate);
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.off('messagesRead', handleReadStatusUpdate);
-        socketRef.current.off('participantsUpdate', handleParticipantsUpdate);
-      }
+      socketRef.current?.off('messagesRead', handleReadStatusUpdate);
+      socketRef.current?.off('participantsUpdate', handleParticipantsUpdate);
     };
   }, [socketRef, handleReadStatusUpdate, handleParticipantsUpdate]);
 

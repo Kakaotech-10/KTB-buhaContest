@@ -1,11 +1,16 @@
-import React, { useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import { Spinner, Text } from '@goorm-dev/vapor-components';
 import { SystemMessage, FileMessage, UserMessage, AIMessage } from './Message';
 
 // ScrollHandler 클래스 정의
 class ScrollHandler {
   constructor(containerRef) {
-    // Refs
     this.containerRef = containerRef;
     this.scrollHeightBeforeLoadRef = { current: 0 };
     this.scrollTopBeforeLoadRef = { current: 0 };
@@ -19,7 +24,6 @@ class ScrollHandler {
     this.isLoadingRef = { current: false };
     this.loadMoreTriggeredRef = { current: false };
 
-    // Constants
     this.SCROLL_THRESHOLD = 30;
     this.SCROLL_DEBOUNCE_DELAY = 100;
   }
@@ -27,20 +31,19 @@ class ScrollHandler {
   logDebug(action, data) {
     console.debug(`[ScrollHandler] ${action}:`, {
       ...data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
   saveScrollPosition() {
     const container = this.containerRef.current;
     if (!container) return;
-    
+
     this.logDebug('saveScrollPosition', {
       scrollHeight: container.scrollHeight,
-      scrollTop: container.scrollTop
+      scrollTop: container.scrollTop,
     });
-    
-    // 이전 스크롤 위치와 높이 저장
+
     this.scrollHeightBeforeLoadRef.current = container.scrollHeight;
     this.scrollTopBeforeLoadRef.current = container.scrollTop;
     this.isLoadingOldMessages.current = true;
@@ -50,7 +53,7 @@ class ScrollHandler {
     if (this.isLoadingRef.current || this.loadMoreTriggeredRef.current) {
       this.logDebug('startLoadingMessages prevented', {
         isLoading: this.isLoadingRef.current,
-        loadMoreTriggered: this.loadMoreTriggeredRef.current
+        loadMoreTriggered: this.loadMoreTriggeredRef.current,
       });
       return false;
     }
@@ -70,21 +73,23 @@ class ScrollHandler {
       this.temporaryDisableScroll.current = true;
 
       const newScrollHeight = container.scrollHeight;
-      const heightDifference = newScrollHeight - this.scrollHeightBeforeLoadRef.current;
-      const newScrollTop = this.scrollTopBeforeLoadRef.current + heightDifference;
+      const heightDifference =
+        newScrollHeight - this.scrollHeightBeforeLoadRef.current;
+      const newScrollTop =
+        this.scrollTopBeforeLoadRef.current + heightDifference;
 
       this.logDebug('restoreScrollPosition', {
         newScrollHeight,
         heightDifference,
         newScrollTop,
-        immediate
+        immediate,
       });
 
       if (immediate) {
         const originalScrollBehavior = container.style.scrollBehavior;
         container.style.scrollBehavior = 'auto';
         container.scrollTop = newScrollTop;
-        
+
         requestAnimationFrame(() => {
           container.style.scrollBehavior = originalScrollBehavior;
           this.temporaryDisableScroll.current = false;
@@ -93,7 +98,7 @@ class ScrollHandler {
       } else {
         container.scrollTo({
           top: newScrollTop,
-          behavior: 'smooth'
+          behavior: 'smooth',
         });
         this.temporaryDisableScroll.current = false;
         this.isRestoringScroll.current = false;
@@ -128,14 +133,14 @@ class ScrollHandler {
     if (!container) return null;
 
     const { scrollTop, scrollHeight, clientHeight } = container;
-    this.isNearBottom.current = (scrollHeight - scrollTop - clientHeight) < 100;
+    this.isNearBottom.current = scrollHeight - scrollTop - clientHeight < 100;
 
     const scrollInfo = {
       isAtTop: scrollTop < this.SCROLL_THRESHOLD,
       isAtBottom: this.isNearBottom.current,
       scrollTop,
       scrollHeight,
-      clientHeight
+      clientHeight,
     };
 
     this.logDebug('updateScrollPosition', scrollInfo);
@@ -148,13 +153,13 @@ class ScrollHandler {
       loadingMessages,
       onLoadMore,
       onScrollPositionChange,
-      onScroll
+      onScroll,
     } = options;
 
     if (this.temporaryDisableScroll.current || this.isRestoringScroll.current) {
       this.logDebug('handleScroll skipped', {
         temporaryDisableScroll: this.temporaryDisableScroll.current,
-        isRestoringScroll: this.isRestoringScroll.current
+        isRestoringScroll: this.isRestoringScroll.current,
       });
       return;
     }
@@ -171,7 +176,7 @@ class ScrollHandler {
         this.logDebug('handleScroll loadMore', {
           isAtTop: scrollInfo.isAtTop,
           hasMoreMessages,
-          loadingMessages
+          loadingMessages,
         });
 
         if (await this.startLoadingMessages()) {
@@ -205,14 +210,14 @@ class ScrollHandler {
 
         container.scrollTo({
           top: maxScrollTop,
-          behavior
+          behavior,
         });
 
         this.logDebug('scrollToBottom', {
           scrollHeight,
           height,
           maxScrollTop,
-          behavior
+          behavior,
         });
       } catch (error) {
         console.error('Scroll to bottom error:', error);
@@ -234,14 +239,18 @@ class ScrollHandler {
 const LoadingIndicator = React.memo(({ text }) => (
   <div className="loading-messages">
     <Spinner size="sm" className="text-primary" />
-    <Text size="sm" color="secondary">{text}</Text>
+    <Text size="sm" color="secondary">
+      {text}
+    </Text>
   </div>
 ));
 LoadingIndicator.displayName = 'LoadingIndicator';
 
 const MessageHistoryEnd = React.memo(() => (
   <div className="message-history-end">
-    <Text size="sm" color="secondary">더 이상 불러올 메시지가 없습니다.</Text>
+    <Text size="sm" color="secondary">
+      더 이상 불러올 메시지가 없습니다.
+    </Text>
   </div>
 ));
 MessageHistoryEnd.displayName = 'MessageHistoryEnd';
@@ -254,9 +263,9 @@ const EmptyMessages = React.memo(() => (
 ));
 EmptyMessages.displayName = 'EmptyMessages';
 
-const ChatMessages = ({ 
-  messages = [], 
-  streamingMessages = {}, 
+const ChatMessages = ({
+  messages = [],
+  streamingMessages = {},
   currentUser = null,
   room = null,
   loadingMessages = false,
@@ -268,7 +277,7 @@ const ChatMessages = ({
   messagesEndRef,
   socketRef,
   scrollToBottomOnNewMessage = true,
-  onScrollPositionChange = () => {}
+  onScrollPositionChange = () => {},
 }) => {
   const containerRef = useRef(null);
   const lastMessageRef = useRef(null);
@@ -278,45 +287,64 @@ const ChatMessages = ({
   const loadingTimeoutRef = useRef(null);
   const scrollHandler = useRef(new ScrollHandler(containerRef));
 
-  const logDebug = useCallback((action, data) => {
-    console.debug(`[ChatMessages] ${action}:`, {
-      ...data,
-      loadingMessages,
-      hasMoreMessages,
-      isLoadingOldMessages: scrollHandler.current.isLoadingOldMessages.current,
-      messageCount: messages.length,
-      timestamp: new Date().toISOString(),
-      isInitialLoad: initialLoadRef.current
-    });
-  }, [loadingMessages, hasMoreMessages, messages.length]);
+  const logDebug = useCallback(
+    (action, data) => {
+      console.debug(`[ChatMessages] ${action}:`, {
+        ...data,
+        loadingMessages,
+        hasMoreMessages,
+        isLoadingOldMessages:
+          scrollHandler.current.isLoadingOldMessages.current,
+        messageCount: messages.length,
+        timestamp: new Date().toISOString(),
+        isInitialLoad: initialLoadRef.current,
+      });
+    },
+    [loadingMessages, hasMoreMessages, messages.length]
+  );
 
-  const isMine = useCallback((msg) => {
-    if (!msg?.sender || !currentUser?.id) return false;
-    return (
-      msg.sender._id === currentUser.id || 
-      msg.sender.id === currentUser.id ||
-      msg.sender === currentUser.id
-    );
-  }, [currentUser?.id]);
+  const isMine = useCallback(
+    (msg) => {
+      if (!msg?.sender || !currentUser?.id) return false;
+      return (
+        msg.sender._id === currentUser.id ||
+        msg.sender.id === currentUser.id ||
+        msg.sender === currentUser.id
+      );
+    },
+    [currentUser?.id]
+  );
 
-  const handleScroll = useCallback((event) => {
-    scrollHandler.current.handleScroll(event, {
+  const handleScroll = useCallback(
+    (event) => {
+      scrollHandler.current.handleScroll(event, {
+        hasMoreMessages,
+        loadingMessages,
+        onLoadMore,
+        onScrollPositionChange,
+        onScroll,
+      });
+    },
+    [
       hasMoreMessages,
       loadingMessages,
       onLoadMore,
       onScrollPositionChange,
-      onScroll
-    });
-  }, [hasMoreMessages, loadingMessages, onLoadMore, onScrollPositionChange, onScroll]);
+      onScroll,
+    ]
+  );
 
-  // 새 메시지 도착 시 스크롤 처리
   useLayoutEffect(() => {
     if (messages.length > lastMessageCountRef.current) {
       const newMessages = messages.slice(lastMessageCountRef.current);
       const lastMessage = newMessages[newMessages.length - 1];
-      
-      const shouldScroll = scrollToBottomOnNewMessage && 
-        scrollHandler.current.shouldScrollToBottom(lastMessage, isMine(lastMessage));
+
+      const shouldScroll =
+        scrollToBottomOnNewMessage &&
+        scrollHandler.current.shouldScrollToBottom(
+          lastMessage,
+          isMine(lastMessage)
+        );
 
       if (shouldScroll) {
         scrollHandler.current.scrollToBottom('smooth');
@@ -326,37 +354,47 @@ const ChatMessages = ({
     }
   }, [messages, scrollToBottomOnNewMessage, isMine]);
 
-  // 과거 메시지 로드 후 스크롤 위치 복원
   useLayoutEffect(() => {
-    if (!loadingMessages && scrollHandler.current.isLoadingOldMessages.current) {
+    if (
+      !loadingMessages &&
+      scrollHandler.current.isLoadingOldMessages.current
+    ) {
       if (scrollHandler.current.scrollRestorationRef.current) {
-        cancelAnimationFrame(scrollHandler.current.scrollRestorationRef.current);
+        cancelAnimationFrame(
+          scrollHandler.current.scrollRestorationRef.current
+        );
       }
 
-      scrollHandler.current.scrollRestorationRef.current = requestAnimationFrame(() => {
-        scrollHandler.current.restoreScrollPosition(true);
-      });
+      scrollHandler.current.scrollRestorationRef.current =
+        requestAnimationFrame(() => {
+          scrollHandler.current.restoreScrollPosition(true);
+        });
     }
   }, [loadingMessages]);
 
-  // 스트리밍 메시지 처리
   useEffect(() => {
     const streamingMessagesArray = Object.values(streamingMessages);
     if (streamingMessagesArray.length > 0) {
-      const lastMessage = streamingMessagesArray[streamingMessagesArray.length - 1];
-      
-      if (lastMessage && scrollHandler.current.shouldScrollToBottom(lastMessage, isMine(lastMessage))) {
+      const lastMessage =
+        streamingMessagesArray[streamingMessagesArray.length - 1];
+
+      if (
+        lastMessage &&
+        scrollHandler.current.shouldScrollToBottom(
+          lastMessage,
+          isMine(lastMessage)
+        )
+      ) {
         scrollHandler.current.scrollToBottom('smooth');
       }
     }
   }, [streamingMessages, isMine]);
 
-  // 초기 스크롤 설정
   useLayoutEffect(() => {
     if (!initialScrollRef.current && messages.length > 0) {
       scrollHandler.current.scrollToBottom('auto');
       initialScrollRef.current = true;
-      
+
       if (initialLoadRef.current) {
         setTimeout(() => {
           initialLoadRef.current = false;
@@ -365,13 +403,12 @@ const ChatMessages = ({
     }
   }, [messages.length]);
 
-  // 스크롤 이벤트 리스너 설정
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     container.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     return () => {
       scrollHandler.current.cleanup();
       if (loadingTimeoutRef.current) {
@@ -383,7 +420,7 @@ const ChatMessages = ({
 
   const allMessages = useMemo(() => {
     if (!Array.isArray(messages)) return [];
-    
+
     const streamingArray = Object.values(streamingMessages || {});
     const combinedMessages = [...messages, ...streamingArray];
 
@@ -393,56 +430,76 @@ const ChatMessages = ({
     });
   }, [messages, streamingMessages]);
 
-  const renderMessage = useCallback((msg, idx) => {
-    if (!msg || !SystemMessage || !FileMessage || !UserMessage || !AIMessage) {
-      console.error('Message component undefined:', {
-        msgType: msg?.type,
-        hasSystemMessage: !!SystemMessage,
-        hasFileMessage: !!FileMessage,
-        hasUserMessage: !!UserMessage,
-        hasAIMessage: !!AIMessage
-      });
-      return null;
-    }
+  const renderMessage = useCallback(
+    (msg, idx) => {
+      if (
+        !msg ||
+        !SystemMessage ||
+        !FileMessage ||
+        !UserMessage ||
+        !AIMessage
+      ) {
+        console.error('Message component undefined:', {
+          msgType: msg?.type,
+          hasSystemMessage: !!SystemMessage,
+          hasFileMessage: !!FileMessage,
+          hasUserMessage: !!UserMessage,
+          hasAIMessage: !!AIMessage,
+        });
+        return null;
+      }
 
-    const isLast = idx === allMessages.length - 1;
-    const commonProps = {
+      const isLast = idx === allMessages.length - 1;
+      const commonProps = {
+        currentUser,
+        room,
+        onReactionAdd,
+        onReactionRemove,
+      };
+
+      const MessageComponent =
+        {
+          system: SystemMessage,
+          file: FileMessage,
+          ai: AIMessage,
+        }[msg.type] || UserMessage;
+
+      return (
+        <MessageComponent
+          key={msg._id || `msg-${idx}`}
+          ref={isLast ? lastMessageRef : null}
+          {...commonProps}
+          msg={msg}
+          content={msg.content}
+          isMine={msg.type !== 'system' ? isMine(msg) : undefined}
+          isStreaming={msg.type === 'ai' ? msg.isStreaming || false : undefined}
+          messageRef={msg}
+          socketRef={socketRef}
+        />
+      );
+    },
+    [
+      allMessages.length,
       currentUser,
       room,
+      isMine,
       onReactionAdd,
-      onReactionRemove
-    };
-
-    const MessageComponent = {
-      system: SystemMessage,
-      file: FileMessage,
-      ai: AIMessage
-    }[msg.type] || UserMessage;
-
-    return (
-      <MessageComponent
-        key={msg._id || `msg-${idx}`}
-        ref={isLast ? lastMessageRef : null}
-        {...commonProps}
-        msg={msg}
-        content={msg.content}
-        isMine={msg.type !== 'system' ? isMine(msg) : undefined}
-        isStreaming={msg.type === 'ai' ? (msg.isStreaming || false) : undefined}
-        messageRef={msg}
-        socketRef={socketRef}
-      />
-    );
-  }, [allMessages.length, currentUser, room, isMine, onReactionAdd, onReactionRemove, socketRef]);
+      onReactionRemove,
+      socketRef,
+    ]
+  );
 
   return (
-    <div 
-      className="message-list" 
+    <div
+      className="message-list"
       ref={containerRef}
       role="log"
       aria-live="polite"
       aria-atomic="false"
     >
-      {loadingMessages && <LoadingIndicator text="이전 메시지를 불러오는 중..." />}
+      {loadingMessages && (
+        <LoadingIndicator text="이전 메시지를 불러오는 중..." />
+      )}
 
       {!loadingMessages && !hasMoreMessages && messages.length > 0 && (
         <MessageHistoryEnd />

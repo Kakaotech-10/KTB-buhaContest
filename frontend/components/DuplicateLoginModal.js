@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, Modal, ModalBody, ModalFooter, ModalHeader, Button, Text } from '@goorm-dev/vapor-components';
+import {
+  Alert,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Button,
+  Text,
+} from '@goorm-dev/vapor-components';
 import { AlertTriangle, Timer, ExternalLink } from 'lucide-react';
 
-const DuplicateLoginModal = ({ 
-  isOpen, 
-  onClose, 
-  deviceInfo, 
+const DuplicateLoginModal = ({
+  isOpen,
+  onClose,
+  deviceInfo,
   ipAddress,
-  onTimeout 
+  onTimeout,
 }) => {
   const [timeLeft, setTimeLeft] = useState(10);
 
@@ -16,7 +24,7 @@ const DuplicateLoginModal = ({
 
     // 10초 카운트다운
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
           onTimeout();
@@ -33,18 +41,16 @@ const DuplicateLoginModal = ({
   }, [isOpen, onTimeout]);
 
   return (
-    <Modal 
-      isOpen={isOpen} 
+    <Modal
+      isOpen={isOpen}
       toggle={onClose}
       type="center"
       size="md"
       direction="vertical"
       className="duplicate-login-modal"
     >
-      <ModalHeader toggle={onClose}>
-        중복 로그인 감지됨
-      </ModalHeader>
-      
+      <ModalHeader toggle={onClose}>중복 로그인 감지됨</ModalHeader>
+
       <ModalBody className="space-y-4">
         <Alert color="danger">
           <Text>다른 기기에서 로그인이 감지되었습니다.</Text>
@@ -63,9 +69,9 @@ const DuplicateLoginModal = ({
         </Text>
 
         <div className="relative w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-          <div 
+          <div
             className="absolute inset-0 bg-warning transition-all duration-1000 ease-linear"
-            style={{ 
+            style={{
               width: `${(timeLeft / 10) * 100}%`,
             }}
           />

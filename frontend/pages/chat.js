@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card } from '@goorm-dev/vapor-core';
 import { 
   Text,
@@ -25,7 +25,6 @@ const ChatPage = () => {
     room,
     messages,
     streamingMessages,
-    connected,
     connectionStatus,
     messageLoadError,
     retryMessageLoad,
@@ -58,9 +57,10 @@ const ChatPage = () => {
     handleReactionRemove,
     loadingMessages,
     hasMoreMessages,
-    handleLoadMore
+    handleLoadMore,
   } = useChatRoom();
 
+  // 참가자 렌더링 최적화
   const renderParticipants = () => {
     if (!room?.participants) return null;
 
@@ -71,22 +71,19 @@ const ChatPage = () => {
     return (
       <div className="flex items-center gap-4 mt-2 px-6 border-b">
         <UserAvatarGroup size="md">
-          {participants.slice(0, maxVisibleAvatars).map(participant => {
+          {participants.slice(0, maxVisibleAvatars).map((participant) => {
             const backgroundColor = generateColorFromEmail(participant.email);
             const color = getContrastTextColor(backgroundColor);
-            
             return (
-              <Avatar 
-                key={participant._id} 
+              <Avatar
+                key={participant._id}
                 style={{ backgroundColor, color }}
                 className="participant-avatar"
                 name={participant.name}
               />
             );
           })}
-          {remainingCount > 0 && (
-            <CountAvatar value={remainingCount} />
-          )}
+          {remainingCount > 0 && <CountAvatar value={remainingCount} />}
           <div className="ml-3">총 {participants.length}명</div>
         </UserAvatarGroup>
       </div>
@@ -99,7 +96,6 @@ const ChatPage = () => {
         <Card.Body className="flex items-center justify-center">
           <div className="text-center mt-5">
             <Spinner size="lg" className="mb-4" />
-            <br/>
             <Text size="lg">채팅방 연결 중...</Text>
           </div>
         </Card.Body>
@@ -113,9 +109,7 @@ const ChatPage = () => {
         <Card.Body className="flex items-center justify-center">
           <Alert color="danger" className="mb-4">
             <AlertCircle className="w-5 h-5" />
-            <span className="ml-2">
-              {error || '채팅방을 불러오는데 실패했습니다.'}
-            </span>
+            <span className="ml-2">{error || '채팅방을 불러오는데 실패했습니다.'}</span>
           </Alert>
           <Button
             variant="primary"
@@ -192,34 +186,17 @@ const ChatPage = () => {
     );
   };
 
-  if (loading || !room) {
-    return renderLoadingState();
-  }
-
-  if (error) {
-    return renderErrorState();
-  }
-
-  const getConnectionStatus = () => {
-    if (connectionStatus === 'connecting') {
-      return {
-        label: "연결 중...",
-        color: "warning"
-      };
-    } else if (connectionStatus === 'connected') {
-      return {
-        label: "연결됨",
-        color: "success"
-      };
-    } else {
-      return {
-        label: "연결 끊김",
-        color: "danger"
-      };
+  // connection status 계산
+  const status = useMemo(() => {
+    switch (connectionStatus) {
+      case 'connecting':
+        return { label: "연결 중...", color: "warning" };
+      case 'connected':
+        return { label: "연결됨", color: "success" };
+      default:
+        return { label: "연결 끊김", color: "danger" };
     }
-  };
-
-  const status = getConnectionStatus();
+  }, [connectionStatus]);
 
   return (
     <div className="chat-container">
@@ -227,7 +204,7 @@ const ChatPage = () => {
         <Card.Header className="chat-room-header">
           <div className="flex items-center gap-3">
             <Text size="xl" weight="bold" className="chat-room-title">
-              {room.name}
+              {room?.name || '채팅방'}
             </Text>
             {renderParticipants()}
           </div>
@@ -265,7 +242,7 @@ const ChatPage = () => {
             setShowMentionList={setShowMentionList}
             setMentionFilter={setMentionFilter}
             setMentionIndex={setMentionIndex}
-            room={room} // room 객체 전달
+            room={room}
             onMentionSelect={(user) => {
               insertMention(user);
               setShowMentionList(false);

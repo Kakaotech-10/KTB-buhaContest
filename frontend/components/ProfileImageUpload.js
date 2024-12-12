@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@goorm-dev/vapor-core';
 import { Alert } from '@goorm-dev/vapor-components';
 import { Camera, X } from 'lucide-react';
@@ -12,20 +12,20 @@ const ProfileImageUpload = ({ currentImage, onImageChange }) => {
   const fileInputRef = useRef(null);
 
   // 프로필 이미지 URL 생성
-  const getProfileImageUrl = (imagePath) => {
+  const getProfileImageUrl = useCallback((imagePath) => {
     if (!imagePath) return null;
     return imagePath.startsWith('http') ? 
       imagePath : 
       `${process.env.NEXT_PUBLIC_API_URL}${imagePath}`;
-  };
+  }, []);
 
   // 컴포넌트 마운트 시 이미지 설정
   useEffect(() => {
     const imageUrl = getProfileImageUrl(currentImage);
     setPreviewUrl(imageUrl);
-  }, [currentImage]);
+  }, [currentImage, getProfileImageUrl]);
 
-  const handleFileSelect = async (e) => {
+  const handleFileSelect = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -91,20 +91,15 @@ const ProfileImageUpload = ({ currentImage, onImageChange }) => {
       console.error('Image upload error:', error);
       setError(error.message);
       setPreviewUrl(getProfileImageUrl(currentImage));
-      
-      // 기존 objectUrl 정리
-      if (previewUrl && previewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(previewUrl);
-      }
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
-  };
+  }, [currentImage, getProfileImageUrl, onImageChange]);
 
-  const handleRemoveImage = async () => {
+  const handleRemoveImage = useCallback(async () => {
     try {
       setUploading(true);
       setError('');
@@ -151,7 +146,7 @@ const ProfileImageUpload = ({ currentImage, onImageChange }) => {
     } finally {
       setUploading(false);
     }
-  };
+  }, [currentImage, onImageChange, previewUrl]);
 
   // 컴포넌트 언마운트 시 cleanup
   useEffect(() => {
@@ -162,7 +157,6 @@ const ProfileImageUpload = ({ currentImage, onImageChange }) => {
     };
   }, [previewUrl]);
 
-  // 현재 사용자 정보
   const currentUser = authService.getCurrentUser();
 
   return (

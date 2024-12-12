@@ -288,48 +288,33 @@ class SessionService {
 
   static async updateLastActivity(userId) {
     try {
-      if (!userId) {
-        console.error('updateLastActivity: userId is required');
-        return false;
-      }
-
       const sessionKey = this.getSessionKey(userId);
       const sessionData = await this.getJson(sessionKey);
+      if (!sessionData) throw new Error(`No session found for user ${userId}`);
 
-      if (!sessionData) {
-        console.error('updateLastActivity: No session found for user', userId);
-        return false;
-      }
-
-      // 세션 데이터 갱신
+      // 세션 갱신
       sessionData.lastActivity = Date.now();
-
-      // 갱신된 세션 데이터 저장
       const updated = await this.setJson(
         sessionKey,
         sessionData,
         this.SESSION_TTL
       );
-      if (!updated) {
-        console.error('updateLastActivity: Failed to update session data');
-        return false;
-      }
+      if (!updated) throw new Error('Failed to update session data');
 
-      // 관련 키들의 만료 시간도 함께 갱신
-      const activeSessionKey = this.getActiveSessionKey(userId);
-      const userSessionsKey = this.getUserSessionsKey(userId);
-      if (sessionData.sessionId) {
-        const sessionIdKey = this.getSessionIdKey(sessionData.sessionId);
-        await Promise.all([
-          redisClientInstance.expire(activeSessionKey, this.SESSION_TTL),
-          redisClientInstance.expire(userSessionsKey, this.SESSION_TTL),
-          redisClientInstance.expire(sessionIdKey, this.SESSION_TTL),
-        ]);
-      }
-
+      // TTL 갱신
+      await Promise.all([
+        redisClientInstance.expire(
+          this.getActiveSessionKey(userId),
+          this.SESSION_TTL
+        ),
+        redisClientInstance.expire(
+          this.getUserSessionsKey(userId),
+          this.SESSION_TTL
+        ),
+      ]);
       return true;
     } catch (error) {
-      console.error('Update last activity error:', error);
+      console.error(`Update last activity error: ${error.message}`);
       return false;
     }
   }

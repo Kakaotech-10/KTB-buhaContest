@@ -1,7 +1,7 @@
 import axios, { isCancel, CancelToken } from 'axios';
 import authService from './authService';
 import { Toast } from '../components/Toast';
-
+let isUploading = false;
 class FileService {
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -15,19 +15,19 @@ class FileService {
         extensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
         mimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
         maxSize: 10 * 1024 * 1024,
-        name: '이미지'
+        name: '이미지',
       },
       video: {
         extensions: ['.mp4', '.webm', '.mov'],
         mimeTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
         maxSize: 50 * 1024 * 1024,
-        name: '동영상'
+        name: '동영상',
       },
       audio: {
         extensions: ['.mp3', '.wav', '.ogg'],
         mimeTypes: ['audio/mpeg', 'audio/wav', 'audio/ogg'],
         maxSize: 20 * 1024 * 1024,
-        name: '오디오'
+        name: '오디오',
       },
       document: {
         extensions: ['.pdf', '.doc', '.docx', '.txt'],
@@ -35,21 +35,21 @@ class FileService {
           'application/pdf',
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'text/plain'
+          'text/plain',
         ],
         maxSize: 20 * 1024 * 1024,
-        name: '문서'
+        name: '문서',
       },
       archive: {
         extensions: ['.zip', '.rar', '.7z'],
         mimeTypes: [
           'application/zip',
           'application/x-rar-compressed',
-          'application/x-7z-compressed'
+          'application/x-7z-compressed',
         ],
         maxSize: 50 * 1024 * 1024,
-        name: '압축파일'
-      }
+        name: '압축파일',
+      },
     };
   }
 
@@ -61,7 +61,9 @@ class FileService {
     }
 
     if (file.size > this.uploadLimit) {
-      const message = `파일 크기는 ${this.formatFileSize(this.uploadLimit)}를 초과할 수 없습니다.`;
+      const message = `파일 크기는 ${this.formatFileSize(
+        this.uploadLimit
+      )}를 초과할 수 없습니다.`;
       Toast.error(message);
       return { success: false, message };
     }
@@ -86,7 +88,9 @@ class FileService {
     }
 
     if (file.size > maxTypeSize) {
-      const message = `${typeConfig.name} 파일은 ${this.formatFileSize(maxTypeSize)}를 초과할 수 없습니다.`;
+      const message = `${typeConfig.name} 파일은 ${this.formatFileSize(
+        maxTypeSize
+      )}를 초과할 수 없습니다.`;
       Toast.error(message);
       return { success: false, message };
     }
@@ -102,35 +106,46 @@ class FileService {
   }
 
   async uploadFile(file, onProgress) {
-    const validationResult = await this.validateFile(file);
-    if (!validationResult.success) {
-      return validationResult;
+    console.log(file);
+
+    // 이미 업로드가 진행 중이라면 추가 업로드를 방지
+    if (isUploading) {
+      return { success: false, message: '이미 업로드 중입니다.' };
     }
 
+    isUploading = true; // 업로드 시작
+
     try {
-      const user = authService.getCurrentUser();
-      if (!user?.token || !user?.sessionId) {
-        return { 
-          success: false, 
-          message: '인증 정보가 없습니다.' 
-        };
+      // 파일 검증
+      const validationResult = await this.validateFile(file);
+      if (!validationResult.success) {
+        console.log(validationResult.message);
+        return validationResult;
       }
 
+      // 인증 정보 확인
+      const user = authService.getCurrentUser();
+      if (!user?.token || !user?.sessionId) {
+        return { success: false, message: '인증 정보가 없습니다.' };
+      }
+
+      // FormData 생성
       const formData = new FormData();
       formData.append('file', file);
 
       const source = CancelToken.source();
       this.activeUploads.set(file.name, source);
 
-      const uploadUrl = this.baseUrl ? 
-        `${this.baseUrl}/api/files/upload` : 
-        '/api/files/upload';
+      const uploadUrl = this.baseUrl
+        ? `${this.baseUrl}/api/files/upload`
+        : '/api/files/upload';
 
+      // 파일 업로드 요청
       const response = await axios.post(uploadUrl, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'x-auth-token': user.token,
-          'x-session-id': user.sessionId
+          'x-session-id': user.sessionId,
         },
         cancelToken: source.token,
         withCredentials: true,
@@ -141,37 +156,47 @@ class FileService {
             );
             onProgress(percentCompleted);
           }
-        }
+        },
       });
+      console.log('파일 업로드 결과', response);
+
+      // 업로드 후 상태 리셋
+      isUploading = false;
 
       this.activeUploads.delete(file.name);
 
       if (!response.data || !response.data.success) {
         return {
           success: false,
-          message: response.data?.message || '파일 업로드에 실패했습니다.'
+          message: response.data?.message || '파일 업로드에 실패했습니다.',
         };
       }
 
       const fileData = response.data.file;
+      const allfilesData = response.data.allfiles;
+      console.log('file data!!!', fileData);
+      console.log('response data!!!!', response.data);
       return {
         success: true,
         data: {
           ...response.data,
           file: {
             ...fileData,
-            url: this.getFileUrl(fileData.filename, true)
-          }
-        }
+            fileUrl: allfilesData.path,
+            url: this.getFileUrl(fileData.filename, true),
+          },
+        },
       };
-
     } catch (error) {
+      // 오류 발생 시 상태 리셋
+      isUploading = false;
+
       this.activeUploads.delete(file.name);
-      
+
       if (isCancel(error)) {
         return {
           success: false,
-          message: '업로드가 취소되었습니다.'
+          message: '업로드가 취소되었습니다.',
         };
       }
 
@@ -183,12 +208,12 @@ class FileService {
           }
           return {
             success: false,
-            message: '인증이 만료되었습니다. 다시 로그인해주세요.'
+            message: '인증이 만료되었습니다. 다시 로그인해주세요.',
           };
         } catch (refreshError) {
           return {
             success: false,
-            message: '인증이 만료되었습니다. 다시 로그인해주세요.'
+            message: '인증이 만료되었습니다. 다시 로그인해주세요.',
           };
         }
       }
@@ -196,13 +221,14 @@ class FileService {
       return this.handleUploadError(error);
     }
   }
+
   async downloadFile(filename, originalname) {
     try {
       const user = authService.getCurrentUser();
       if (!user?.token || !user?.sessionId) {
         return {
           success: false,
-          message: '인증 정보가 없습니다.'
+          message: '인증 정보가 없습니다.',
         };
       }
 
@@ -211,30 +237,30 @@ class FileService {
       const checkResponse = await axios.head(downloadUrl, {
         headers: {
           'x-auth-token': user.token,
-          'x-session-id': user.sessionId
+          'x-session-id': user.sessionId,
         },
-        validateStatus: status => status < 500,
-        withCredentials: true
+        validateStatus: (status) => status < 500,
+        withCredentials: true,
       });
 
       if (checkResponse.status === 404) {
         return {
           success: false,
-          message: '파일을 찾을 수 없습니다.'
+          message: '파일을 찾을 수 없습니다.',
         };
       }
 
       if (checkResponse.status === 403) {
         return {
           success: false,
-          message: '파일에 접근할 권한이 없습니다.'
+          message: '파일에 접근할 권한이 없습니다.',
         };
       }
 
       if (checkResponse.status !== 200) {
         return {
           success: false,
-          message: '파일 다운로드 준비 중 오류가 발생했습니다.'
+          message: '파일 다운로드 준비 중 오류가 발생했습니다.',
         };
       }
 
@@ -243,11 +269,11 @@ class FileService {
         url: downloadUrl,
         headers: {
           'x-auth-token': user.token,
-          'x-session-id': user.sessionId
+          'x-session-id': user.sessionId,
         },
         responseType: 'blob',
         timeout: 30000,
-        withCredentials: true
+        withCredentials: true,
       });
 
       const contentType = response.headers['content-type'];
@@ -266,7 +292,7 @@ class FileService {
       }
 
       const blob = new Blob([response.data], {
-        type: contentType || 'application/octet-stream'
+        type: contentType || 'application/octet-stream',
       });
 
       const blobUrl = window.URL.createObjectURL(blob);
@@ -283,7 +309,6 @@ class FileService {
       }, 100);
 
       return { success: true };
-
     } catch (error) {
       if (error.response?.status === 401) {
         try {
@@ -294,7 +319,7 @@ class FileService {
         } catch (refreshError) {
           return {
             success: false,
-            message: '인증이 만료되었습니다. 다시 로그인해주세요.'
+            message: '인증이 만료되었습니다. 다시 로그인해주세요.',
           };
         }
       }
@@ -308,25 +333,32 @@ class FileService {
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const endpoint = forPreview ? 'view' : 'download';
-    return `${baseUrl}/api/files/${endpoint}/${filename}`;
+    return `https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/uploads/${filename}`;
   }
 
   getPreviewUrl(file, withAuth = true) {
     if (!file?.filename) return '';
 
-    const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/files/view/${file.filename}`;
-    
-    if (!withAuth) return baseUrl;
+    console.log('File object:', file);
+    console.log('File URL:', file.fileUrl); // 파일 URL을 로그로 확인
 
-    const user = authService.getCurrentUser();
-    if (!user?.token || !user?.sessionId) return baseUrl;
+    if (!file.fileUrl) return ''; // fileUrl이 없다면 빈 문자열 반환
 
-    // URL 객체 생성 전 프로토콜 확인
-    const url = new URL(baseUrl);
-    url.searchParams.append('token', encodeURIComponent(user.token));
-    url.searchParams.append('sessionId', encodeURIComponent(user.sessionId));
+    // 인증 정보가 필요한 경우, URL에 토큰과 세션 ID 추가
+    if (withAuth) {
+      const user = authService.getCurrentUser();
+      if (user?.token && user?.sessionId) {
+        const url = new URL(file.fileUrl);
+        url.searchParams.append('token', encodeURIComponent(user.token));
+        url.searchParams.append(
+          'sessionId',
+          encodeURIComponent(user.sessionId)
+        );
+        return url.toString();
+      }
+    }
 
-    return url.toString();
+    return file.fileUrl; // 인증이 필요 없으면 원래의 fileUrl 반환
   }
 
   getFileType(filename) {
@@ -361,7 +393,7 @@ class FileService {
     return {
       'x-auth-token': user.token,
       'x-session-id': user.sessionId,
-      'Accept': 'application/json, */*'
+      Accept: 'application/json, */*',
     };
   }
 
@@ -371,7 +403,7 @@ class FileService {
     if (error.code === 'ECONNABORTED') {
       return {
         success: false,
-        message: '파일 업로드 시간이 초과되었습니다.'
+        message: '파일 업로드 시간이 초과되었습니다.',
       };
     }
 
@@ -383,32 +415,32 @@ class FileService {
         case 400:
           return {
             success: false,
-            message: message || '잘못된 요청입니다.'
+            message: message || '잘못된 요청입니다.',
           };
         case 401:
           return {
             success: false,
-            message: '인증이 필요합니다.'
+            message: '인증이 필요합니다.',
           };
         case 413:
           return {
             success: false,
-            message: '파일이 너무 큽니다.'
+            message: '파일이 너무 큽니다.',
           };
         case 415:
           return {
             success: false,
-            message: '지원하지 않는 파일 형식입니다.'
+            message: '지원하지 않는 파일 형식입니다.',
           };
         case 500:
           return {
             success: false,
-            message: '서버 오류가 발생했습니다.'
+            message: '서버 오류가 발생했습니다.',
           };
         default:
           return {
             success: false,
-            message: message || '파일 업로드에 실패했습니다.'
+            message: message || '파일 업로드에 실패했습니다.',
           };
       }
     }
@@ -416,7 +448,7 @@ class FileService {
     return {
       success: false,
       message: error.message || '알 수 없는 오류가 발생했습니다.',
-      error
+      error,
     };
   }
 
@@ -426,7 +458,8 @@ class FileService {
     if (error.code === 'ECONNABORTED') {
       return {
         success: false,
-        message: '파일 다운로드 시간이 초과되었습니다.'};
+        message: '파일 다운로드 시간이 초과되었습니다.',
+      };
     }
 
     if (axios.isAxiosError(error)) {
@@ -437,27 +470,27 @@ class FileService {
         case 404:
           return {
             success: false,
-            message: '파일을 찾을 수 없습니다.'
+            message: '파일을 찾을 수 없습니다.',
           };
         case 403:
           return {
             success: false,
-            message: '파일에 접근할 권한이 없습니다.'
+            message: '파일에 접근할 권한이 없습니다.',
           };
         case 400:
           return {
             success: false,
-            message: message || '잘못된 요청입니다.'
+            message: message || '잘못된 요청입니다.',
           };
         case 500:
           return {
             success: false,
-            message: '서버 오류가 발생했습니다.'
+            message: '서버 오류가 발생했습니다.',
           };
         default:
           return {
             success: false,
-            message: message || '파일 다운로드에 실패했습니다.'
+            message: message || '파일 다운로드에 실패했습니다.',
           };
       }
     }
@@ -465,7 +498,7 @@ class FileService {
     return {
       success: false,
       message: error.message || '알 수 없는 오류가 발생했습니다.',
-      error
+      error,
     };
   }
 
@@ -476,12 +509,12 @@ class FileService {
       this.activeUploads.delete(filename);
       return {
         success: true,
-        message: '업로드가 취소되었습니다.'
+        message: '업로드가 취소되었습니다.',
       };
     }
     return {
       success: false,
-      message: '취소할 업로드를 찾을 수 없습니다.'
+      message: '취소할 업로드를 찾을 수 없습니다.',
     };
   }
 
@@ -492,11 +525,11 @@ class FileService {
       this.activeUploads.delete(filename);
       canceledCount++;
     }
-    
+
     return {
       success: true,
       message: `${canceledCount}개의 업로드가 취소되었습니다.`,
-      canceledCount
+      canceledCount,
     };
   }
 
