@@ -49,18 +49,11 @@ export const useMessageHandling = (
 
     try {
       if (loadingMessages) {
-        console.log('Already loading messages, skipping...');
         return;
       }
 
       setLoadingMessages(true);
       const firstMessageTimestamp = messages[0]?.timestamp;
-
-      console.log('Loading more messages:', {
-        roomId: router?.query?.room,
-        before: firstMessageTimestamp,
-        currentMessageCount: messages.length,
-      });
 
       // Promise를 반환하도록 수정
       return new Promise((resolve, reject) => {
@@ -109,7 +102,6 @@ export const useMessageHandling = (
       }
 
       try {
-        console.log('[Chat] Sending message:', messageData);
 
         if (messageData.type === 'file') {
           setUploading(true);
@@ -129,7 +121,6 @@ export const useMessageHandling = (
 
           const uploadedFile = uploadResponse.data.file; // 업로드된 파일 정보 가져오기 (수정)
           const previewUrl = fileService.getPreviewUrl(uploadedFile); // 미리보기 URL 생성 (수정)
-          console.log('미리보기 URL', previewUrl); // 미리보기 URL 확인 (추가)
 
           socketRef.current.emit('chatMessage', {
             room: roomId,

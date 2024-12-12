@@ -79,12 +79,10 @@ export const useRoomHandling = (
       }
 
       if (socketRef.current?.connected) {
-        console.log('Reusing existing socket connection');
         return socketRef.current;
       }
 
       if (socketRef.current) {
-        console.log('Cleaning up existing socket');
         const currentSocket = socketRef.current;
 
         if (userRooms?.get(currentSocket.id)) {
@@ -274,7 +272,6 @@ export const useRoomHandling = (
           
           if (!response || !Array.isArray(response.messages)) {
             if (retryCount < MAX_MESSAGE_RETRY_ATTEMPTS) {
-              console.log(`Invalid message format, retrying (${retryCount + 1}/${MAX_MESSAGE_RETRY_ATTEMPTS})...`);
               setTimeout(() => {
                 loadMessagesWithRetry(retryCount + 1)
                   .then(resolve)
@@ -293,7 +290,6 @@ export const useRoomHandling = (
         const handleError = (error) => {
           cleanup();
           if (retryCount < MAX_MESSAGE_RETRY_ATTEMPTS) {
-            console.log(`Message loading failed, retrying (${retryCount + 1}/${MAX_MESSAGE_RETRY_ATTEMPTS})...`);
             setTimeout(() => {
               loadMessagesWithRetry(retryCount + 1)
                 .then(resolve)
@@ -307,7 +303,6 @@ export const useRoomHandling = (
         const handleTimeout = () => {
           cleanup();
           if (retryCount < MAX_MESSAGE_RETRY_ATTEMPTS) {
-            console.log(`Message loading timed out, retrying (${retryCount + 1}/${MAX_MESSAGE_RETRY_ATTEMPTS})...`);
             setTimeout(() => {
               loadMessagesWithRetry(retryCount + 1)
                 .then(resolve)
@@ -333,7 +328,6 @@ export const useRoomHandling = (
       return await loadMessagesWithRetry();
     } catch (error) {
       if (!socketRef.current?.connected) {
-        console.log('Socket disconnected, attempting to reconnect...');
         await setupSocket();
         return loadMessagesWithRetry();
       }
@@ -354,16 +348,13 @@ export const useRoomHandling = (
         messageRetryCountRef.current = 0;
 
         // 1. Socket Setup
-        console.log('Setting up socket connection...');
         socketRef.current = await setupSocket();
 
         // 2. Fetch Room Data
-        console.log('Fetching room data...');
         const roomData = await fetchRoomData(router.query.room);
         setRoom(roomData);
 
         // 3. Setup Event Listeners
-        console.log('Setting up event listeners...');
         if (mountedRef.current) {
           setupEventListeners();
         }
@@ -373,7 +364,6 @@ export const useRoomHandling = (
           console.log('Joining room...');
           await joinRoom(router.query.room);
           
-          console.log('Loading initial messages...');
           await loadInitialMessages(router.query.room);
         }
 
@@ -443,7 +433,6 @@ export const useRoomHandling = (
       messageRetryCountRef.current = 0;
 
       if (socketRef.current) {
-        console.log("Cleaning up socket connection");
         socketRef.current.disconnect();
         socketRef.current = null;
       }
@@ -453,7 +442,6 @@ export const useRoomHandling = (
   useEffect(() => {
     const handleOnline = () => {
       if (!setupCompleteRef.current && mountedRef.current) {
-        console.log('Network is back online, attempting to reconnect...');
         setupRoom().catch(error => {
           console.error('Auto reconnect failed:', error);
         });

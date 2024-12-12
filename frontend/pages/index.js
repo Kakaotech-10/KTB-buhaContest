@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { Card } from '@goorm-dev/vapor-core';
 import { 
@@ -113,13 +114,6 @@ const Login = () => {
         password: formData.password
       };
 
-      // 디버그 로깅
-      console.log('Submitting login request:', {
-        email: loginCredentials.email,
-        hasPassword: !!loginCredentials.password,
-        timestamp: new Date().toISOString()
-      });
-
       // 로그인 요청
       await authService.login(loginCredentials);
       const redirectUrl = router.query.redirect || '/chat-rooms';
@@ -178,7 +172,7 @@ const Login = () => {
       <Card className="auth-card">
         <Card.Body className="auth-card-body">
           <div className="auth-header">
-            <img src="images/logo-h.png" className="w-50" />
+            <Image src="/images/logo-h.webp" alt={"logo.h"} width={50} height={40} className="w-50" />
           </div>
 
           {error && (

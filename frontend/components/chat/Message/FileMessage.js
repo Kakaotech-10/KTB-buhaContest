@@ -181,13 +181,15 @@ const FileMessage = ({
       if (!user?.token || !user?.sessionId) {
         throw new Error('인증 정보가 없습니다.');
       }
-      
+
       const previewUrl = msg.metadata.fileUrl;
 
       return (
         <div className="bg-transparent-pattern">
-          <img
+          <Image
             src={previewUrl}
+            width={50}
+            height={50}
             alt={originalname}
             className="object-cover rounded-sm"
             onLoad={() => {

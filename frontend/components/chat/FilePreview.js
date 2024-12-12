@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback, memo } from 'react';
+import Image from 'next/image';
 import { Button } from '@goorm-dev/vapor-components';
 import { 
   X, 
@@ -210,9 +211,11 @@ const FilePreview = ({
     if (file.type.startsWith('image/')) {
       return (
         <div className={`${previewContainer} ${previewBackground}`}>
-          <img
+          <Image
             src={previewUrl || file.url}
             alt={`${file.name} 미리보기`}
+            width={50}
+            height={50}
             className="w-full h-full object-cover"
             onError={(e) => {
               e.target.onerror = null;

@@ -10,7 +10,6 @@ export const useAIMessageHandling = (
   const [streamingMessages, setStreamingMessages] = useState({});
 
   const handleAIMessageStart = useCallback((data) => {
-    console.log('AI message stream started:', data.messageId);
     
     setStreamingMessages(prev => ({
       ...prev,
@@ -31,12 +30,6 @@ export const useAIMessageHandling = (
       console.warn('Received AI message chunk without messageId');
       return;
     }
-
-    console.log('AI message chunk received:', {
-      messageId: data.messageId,
-      chunkLength: data.fullContent?.length,
-      isCodeBlock: data.isCodeBlock
-    });
 
     setStreamingMessages(prev => {
       // 해당 메시지 ID가 없는 경우 무시
@@ -61,7 +54,6 @@ export const useAIMessageHandling = (
   }, [isNearBottom, scrollToBottom]);
 
   const handleAIMessageComplete = useCallback((data) => {
-    console.log('AI message stream completed:', data.messageId);
 
     setStreamingMessages(prev => {
       const { [data.messageId]: completed, ...rest } = prev;
@@ -133,7 +125,6 @@ export const useAIMessageHandling = (
     }
 
     try {
-      console.log('Sending AI message:', { aiType, content });
       
       socketRef.current.emit('chatMessage', {
         type: 'ai',

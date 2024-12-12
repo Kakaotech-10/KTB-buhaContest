@@ -99,7 +99,6 @@ class SessionService {
         sessionData,
         this.SESSION_TTL
       );
-      console.log('Session saved:', sessionKey, sessionData);
       if (!saved) {
         throw new Error('세션 데이터 저장에 실패했습니다.');
       }
@@ -148,11 +147,6 @@ class SessionService {
       const activeSessionId = await redisClientInstance.get(activeSessionKey);
 
       if (!activeSessionId || activeSessionId !== sessionId) {
-        console.log('Session validation failed:', {
-          userId,
-          sessionId,
-          activeSessionId,
-        });
         return {
           isValid: false,
           error: 'INVALID_SESSION',

@@ -184,9 +184,11 @@ const MessageContent = ({ content, isAI = false }) => {
       </a>
     ),
     img: ({ node, src, alt, ...props }) => (
-      <img
+      <Image
         src={src}
         alt={alt}
+        width={50}
+        height={50}
         className="md-image"
         loading="lazy"
         onError={(e) => {

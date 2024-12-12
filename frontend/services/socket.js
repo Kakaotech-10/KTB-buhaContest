@@ -68,16 +68,13 @@ class SocketService {
     }
 
     if (this.socket?.connected) {
-      console.log('[Socket] Already connected');
       return Promise.resolve(this.socket);
     }
 
     this.connectionPromise = new Promise((resolve, reject) => {
       try {
-        console.log('[Socket] Starting connection...');
 
         if (this.socket) {
-          console.log('[Socket] Cleaning up existing socket before new connection');
           this.cleanup(CLEANUP_REASONS.RECONNECT);
         }
 
@@ -128,7 +125,6 @@ class SocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('[Socket] Disconnected:', reason);
       this.connected = false;
       this.cleanup(CLEANUP_REASONS.DISCONNECT);
     });
@@ -153,7 +149,6 @@ class SocketService {
     });
 
     this.socket.on('duplicate_login', async (data) => {
-      console.log('[Socket] Duplicate login detected:', data);
       if (data.type === 'new_login_attempt') {
         await this.handleDuplicateLogin(data);
       } else if (data.type === 'existing_session') {
@@ -176,7 +171,6 @@ class SocketService {
     });
 
     this.socket.on('reconnect', (attemptNumber) => {
-      console.log(`[Socket] Reconnected after ${attemptNumber} attempts`);
       this.connected = true;
       this.reconnectAttempts = 0;
       this.isReconnecting = false;
@@ -199,8 +193,6 @@ class SocketService {
     if (reason === CLEANUP_REASONS.DISCONNECT && this.isReconnecting) {
       return;
     }
-
-    console.log(`[Socket] Cleanup started (reason: ${reason})`);
 
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
@@ -304,7 +296,6 @@ class SocketService {
   queueMessage(event, data) {
     const message = { event, data, timestamp: Date.now() };
     this.messageQueue.push(message);
-    console.log(`Message queued: ${event}`, message);
   }
 
   processMessageQueue() {
@@ -319,7 +310,6 @@ class SocketService {
       try {
         this.socket.emit(message.event, message.data);
         successCount++;
-        console.log(`Queued message sent: ${message.event}`);
       } catch (error) {
         failureCount++;
         console.error(`Error sending queued message (${message.event}):`, error);
@@ -393,7 +383,6 @@ class SocketService {
   async reconnect() {
     if (this.isReconnecting) return;
 
-    console.log('Initiating manual reconnection...');
     this.isReconnecting = true;
     this.cleanup(CLEANUP_REASONS.RECONNECT);
 
@@ -490,14 +479,12 @@ const socketService = new SocketService();
 
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
-    console.log('Network is online');
     if (!socketService.isConnected() && !socketService.isReconnecting) {
       socketService.connect();
     }
   });
 
   window.addEventListener('offline', () => {
-    console.log('Network is offline');
     socketService.disconnect();
   });
 }

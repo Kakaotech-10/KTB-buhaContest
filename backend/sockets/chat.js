@@ -513,7 +513,6 @@ module.exports = function (io) {
               _id: fileData._id,
               user: socket.user.id,
             });
-            console.log('chat file@@', file);
 
             if (!file) {
               throw new Error('파일을 찾을 수 없거나 접근 권한이 없습니다.');
@@ -600,7 +599,6 @@ module.exports = function (io) {
         // 실제로 해당 방에 참여 중인지 먼저 확인
         const currentRoom = userRooms?.get(socket.user.id);
         if (!currentRoom || currentRoom !== roomId) {
-          console.log(`User ${socket.user.id} is not in room ${roomId}`);
           return;
         }
 
@@ -658,8 +656,6 @@ module.exports = function (io) {
         // 이벤트 발송
         io.to(roomId).emit('message', leaveMessage);
         io.to(roomId).emit('participantsUpdate', updatedRoom.participants);
-
-        console.log(`User ${socket.user.id} left room ${roomId} successfully`);
       } catch (error) {
         console.error('Leave room error:', error);
         socket.emit('error', {

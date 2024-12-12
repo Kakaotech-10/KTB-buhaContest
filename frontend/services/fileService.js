@@ -106,7 +106,6 @@ class FileService {
   }
 
   async uploadFile(file, onProgress) {
-    console.log(file);
 
     // 이미 업로드가 진행 중이라면 추가 업로드를 방지
     if (isUploading) {
@@ -119,7 +118,6 @@ class FileService {
       // 파일 검증
       const validationResult = await this.validateFile(file);
       if (!validationResult.success) {
-        console.log(validationResult.message);
         return validationResult;
       }
 
@@ -158,7 +156,6 @@ class FileService {
           }
         },
       });
-      console.log('파일 업로드 결과', response);
 
       // 업로드 후 상태 리셋
       isUploading = false;
@@ -174,8 +171,6 @@ class FileService {
 
       const fileData = response.data.file;
       const allfilesData = response.data.allfiles;
-      console.log('file data!!!', fileData);
-      console.log('response data!!!!', response.data);
       return {
         success: true,
         data: {
@@ -338,9 +333,6 @@ class FileService {
 
   getPreviewUrl(file, withAuth = true) {
     if (!file?.filename) return '';
-
-    console.log('File object:', file);
-    console.log('File URL:', file.fileUrl); // 파일 URL을 로그로 확인
 
     if (!file.fileUrl) return ''; // fileUrl이 없다면 빈 문자열 반환
 

@@ -1,10 +1,17 @@
 const bcrypt = require('bcryptjs');
-const AWS = require('aws-sdk');
-const s3 = new AWS.S3();
+const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3'); // v3 클라이언트
 const User = require('../models/User');
 const { upload } = require('../middleware/upload');
 const path = require('path');
 const fs = require('fs').promises;
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 // 회원가입
 exports.register = async (req, res) => {
@@ -126,19 +133,12 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-// 프로필 업데이트
 exports.updateProfile = async (req, res) => {
-  try {
-    const { name } = req.body;
+  //try
+  {
+    const { name, currentPassword, newPassword } = req.body;
 
-    if (!name || name.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: '이름을 입력해주세요.',
-      });
-    }
-
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select('+password');
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -146,7 +146,31 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    user.name = name.trim();
+    // 이름 변경 처리
+    if (name && name.trim()) {
+      user.name = name.trim();
+    }
+
+    // 비밀번호 변경 처리
+    if (currentPassword && newPassword) {
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: '새 비밀번호는 6자 이상이어야 합니다.',
+        });
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: '현재 비밀번호가 일치하지 않습니다.',
+        });
+      }
+
+      user.password = await bcrypt.hash(newPassword, 10); // 비밀번호 암호화
+    }
+
     await user.save();
 
     res.json({
@@ -159,18 +183,20 @@ exports.updateProfile = async (req, res) => {
         profileImage: user.profileImage,
       },
     });
-  } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({
-      success: false,
-      message: '프로필 업데이트 중 오류가 발생했습니다.',
-    });
   }
+  // catch (error) {
+  //   console.error('Update profile error:', error);
+  //   res.status(500).json({
+  //     success: false,
+  //     message: '프로필 업데이트 중 오류가 발생했습니다.',
+  //   });
+  // }
 };
 
 // 프로필 이미지 업로드
 exports.uploadProfileImage = async (req, res) => {
   try {
+    //console.log(req);
     // 파일 업로드를 처리하는 미들웨어 사용
     upload.single('profileImage')(req, res, async (err) => {
       if (err) {
@@ -195,15 +221,7 @@ exports.uploadProfileImage = async (req, res) => {
         });
       }
 
-      // S3에서 파일 업로드 후 반환된 URL을 사용
-      const s3Response = await uploadToS3(req.file); // uploadToS3 함수는 S3에 파일을 업로드하는 함수
-
-      // 기존 이미지 삭제 (S3에서 삭제하려면 추가 구현 필요)
-      if (user.profileImage) {
-        // 기존 S3 프로필 이미지 삭제 처리 필요
-      }
-
-      user.profileImage = s3Response.Location; // S3 URL 저장
+      user.profileImage = req.file.s3.url; // S3 URL 저장
       await user.save();
 
       res.json({
@@ -234,14 +252,14 @@ exports.deleteProfileImage = async (req, res) => {
 
     if (user.profileImage) {
       // S3에서 기존 이미지 삭제
-      const imagePath =
-        user.profileImage.split('/')[user.profileImage.split('/').length - 1]; // S3에서 파일명만 추출
+      const imageKey = user.profileImage.split('/').pop(); // S3 URL에서 파일명 추출
       const params = {
         Bucket: process.env.S3_BUCKET_NAME,
-        Key: `uploads/${imagePath}`,
+        Key: `uploads/${imageKey}`,
       };
 
-      await s3.deleteObject(params).promise(); // S3에서 파일 삭제
+      await s3.send(new DeleteObjectCommand(params)); // v3 방식
+
       user.profileImage = ''; // 데이터베이스에서 이미지 URL 삭제
       await user.save();
     }

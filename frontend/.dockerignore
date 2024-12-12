@@ -1,0 +1,17 @@
+
+node_modules/
+
+npm-debug.log
+
+README.md
+
+.next/
+
+.git/
+
+Dockerfile
+
+.vscode/
+
+*.log
+

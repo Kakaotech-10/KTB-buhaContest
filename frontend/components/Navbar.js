@@ -82,7 +82,7 @@ const Navbar = () => {
              }}
            >
              <Image
-               src="/images/logo.png"
+               src="/images/logo.webp"
                alt="Chat App Logo"
                width={240}
                height={72}

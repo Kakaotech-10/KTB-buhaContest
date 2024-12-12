@@ -43,7 +43,6 @@ export const useSocketHandling = (router, maxRetries = 5) => { // 최대 재시�
 
       if (retryCount < maxRetries) {
         const retryDelay = getRetryDelay(retryCount);
-        console.log(`Retrying connection in ${retryDelay}ms... (Attempt ${retryCount + 1}/${maxRetries})`);
         
         cleanup();
 
@@ -134,7 +133,6 @@ export const useSocketHandling = (router, maxRetries = 5) => { // 최대 재시�
       });
 
       socket.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
         setConnected(false);
         
         if (reason === 'io server disconnect' || reason === 'io client disconnect') {
@@ -169,7 +167,6 @@ export const useSocketHandling = (router, maxRetries = 5) => { // 최대 재시�
     if (!socket) return;
 
     const handleConnect = () => {
-      console.log('Socket connected');
       setConnected(true);
       setIsReconnecting(false);
       setRetryCount(0);
@@ -177,7 +174,6 @@ export const useSocketHandling = (router, maxRetries = 5) => { // 최대 재시�
     };
 
     const handleDisconnect = () => {
-      console.log('Socket disconnected');
       setConnected(false);
     };
 
@@ -195,14 +191,12 @@ export const useSocketHandling = (router, maxRetries = 5) => { // 최대 재시�
   // 네트워크 상태 모니터링
   useEffect(() => {
     const handleOnline = () => {
-      console.log('Network is online');
       if (!connected && !isReconnecting) {
         handleReconnect();
       }
     };
 
     const handleOffline = () => {
-      console.log('Network is offline');
       setConnected(false);
     };
 

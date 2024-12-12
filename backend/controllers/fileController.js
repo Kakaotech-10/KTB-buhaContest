@@ -112,7 +112,6 @@ exports.uploadFile = async (req, res) => {
       user: req.user.id,
       path: fileUrl, // S3 URL을 DB에 저장
     });
-    console.log('db 저장 전 file 값 : ', file);
 
     await file.save();
 

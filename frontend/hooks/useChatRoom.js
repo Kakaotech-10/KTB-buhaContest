@@ -120,21 +120,17 @@ export const useChatRoom = () => {
     try {
       // cleanup이 이미 진행 중인지 확인
       if (cleanupInProgressRef.current) {
-        console.log('[Chat] Cleanup already in progress, skipping...');
         return;
       }
 
       cleanupInProgressRef.current = true;
-      console.log(`[Chat] Starting cleanup (reason: ${reason})`);
 
       // Socket cleanup
       if (reason !== 'UNMOUNT' && router.query.room && socketRef.current?.connected) {
-        console.log('[Chat] Emitting leaveRoom event');
         socketRef.current.emit('leaveRoom', router.query.room);
       }
 
       if (socketRef.current && reason !== 'RECONNECT') {
-        console.log('[Chat] Cleaning up socket listeners...');
         socketRef.current.off('message');
         socketRef.current.off('previousMessages');
         socketRef.current.off('previousMessagesLoaded');
@@ -172,8 +168,6 @@ export const useChatRoom = () => {
       } else if (reason === 'DISCONNECT' && mountedRef.current) {
         setError('채팅 연결이 끊어졌습니다. 재연결을 시도합니다.');
       }
-
-      console.log(`[Chat] Cleanup completed (reason: ${reason})`);
 
     } catch (error) {
       console.error('[Chat] Cleanup error:', error);
@@ -306,8 +300,6 @@ export const useChatRoom = () => {
   const setupEventListeners = useCallback(() => {
     if (!socketRef.current || !mountedRef.current) return;
 
-    console.log('Setting up event listeners...');
-
     // 메시지 이벤트
     socketRef.current.on('message', message => {
       if (!message || !mountedRef.current || messageProcessingRef.current || !message._id) return;
@@ -316,7 +308,6 @@ export const useChatRoom = () => {
         return;
       }
 
-      console.log('Received message:', message);
       processedMessageIds.current.add(message._id);
 
       setMessages(prev => {
@@ -337,7 +328,6 @@ export const useChatRoom = () => {
       
       try {
         messageProcessingRef.current = true;
-        console.log('Previous messages response:', response);
 
         if (!response || typeof response !== 'object') {
           throw new Error('Invalid response format');
@@ -417,7 +407,6 @@ export const useChatRoom = () => {
 
     const handleConnect = () => {
       if (!mountedRef.current) return;
-      console.log('Socket connected successfully');
       setConnectionStatus('connected');
       setConnected(true);
       
@@ -433,7 +422,6 @@ export const useChatRoom = () => {
 
     const handleDisconnect = (reason) => {
       if (!mountedRef.current) return;
-      console.log('Socket disconnected:', reason);
       setConnectionStatus('disconnected');
       socketInitializedRef.current = false;
       setupCompleteRef.current = false;
@@ -448,13 +436,11 @@ export const useChatRoom = () => {
 
     const handleReconnecting = (attemptNumber) => {
       if (!mountedRef.current) return;
-      console.log(`Reconnection attempt ${attemptNumber}`);
       setConnectionStatus('connecting');
     };
 
     const handleReconnectSuccess = () => {
       if (!mountedRef.current) return;
-      console.log('Reconnected successfully');
       setConnectionStatus('connected');
       setConnected(true);
       setError('');
@@ -506,7 +492,6 @@ export const useChatRoom = () => {
       if (!isInitialized && router.query.room) {
         try {
           initializingRef.current = true;
-          console.log('Initializing chat room...');
           await setupRoom();
         } catch (error) {
           console.error('Chat initialization error:', error);
@@ -535,7 +520,6 @@ export const useChatRoom = () => {
     }, 60000);
 
     return () => {
-      console.log('[Chat] Component unmounting...');
       mountedRef.current = false;
       clearInterval(tokenCheckInterval);
       

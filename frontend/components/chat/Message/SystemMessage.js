@@ -10,8 +10,6 @@ const SystemMessage = ({ msg }) => {
     second: '2-digit',
     hour12: false
   }).replace(/\./g, '년').replace(/\s/g, ' ').replace('일 ', '일 ');
-
-  console.log(formattedTime);
   
   return (
     <div className="message-system">

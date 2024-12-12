@@ -16,6 +16,7 @@ import {
   Spinner,
   Text,
   Alert,
+  Input,
 } from '@goorm-dev/vapor-components';
 import {
   HScrollTable,
@@ -160,20 +161,21 @@ function ChatRoomsComponent() {
 
   const Modal = ({ visible, children, onClose }) => {
     if (!visible) return null;
-  
-    const modalRoot = typeof window !== 'undefined' ? document.getElementById('modal-root') : null;
-  
+
+    const modalRoot =
+      typeof window !== 'undefined'
+        ? document.getElementById('modal-root')
+        : null;
+
     if (!modalRoot) {
       console.error('modal-root DOM element not found');
       return null;
     }
-  
+
     return ReactDOM.createPortal(
       <div>
         <div className={styles['modal-backdrop']} onClick={onClose}></div>
-        <div className={styles.modal}>
-          {children}
-        </div>
+        <div className={styles.modal}>{children}</div>
       </div>,
       modalRoot
     );
@@ -369,7 +371,6 @@ function ChatRoomsComponent() {
 
   useEffect(() => {
     const handleOnline = () => {
-      console.log('Network is online');
       setConnectionStatus(CONNECTION_STATUS.CONNECTING);
       lastLoadedPageRef.current = 0;
       setPageIndex(0);
@@ -377,7 +378,6 @@ function ChatRoomsComponent() {
     };
 
     const handleOffline = () => {
-      console.log('Network is offline');
       setConnectionStatus(CONNECTION_STATUS.DISCONNECTED);
       setError({
         title: '네트워크 연결 끊김',
@@ -448,7 +448,6 @@ function ChatRoomsComponent() {
           },
           disconnect: (reason) => {
             setConnectionStatus(CONNECTION_STATUS.DISCONNECTED);
-            console.log('Socket disconnected:', reason);
           },
           error: (error) => {
             console.error('Socket error:', error);
@@ -509,7 +508,6 @@ function ChatRoomsComponent() {
   }, [currentUser, handleAuthError]);
 
   const handleJoinRoom = async (roomId, hasPassword) => {
-    console.log('Joining room:', roomId, 'Has password:', hasPassword); // 디버깅
 
     if (connectionStatus !== CONNECTION_STATUS.CONNECTED) {
       setError({
@@ -523,7 +521,6 @@ function ChatRoomsComponent() {
     if (hasPassword) {
       setPasswordModalVisible(true);
       setRoomIdForPassword(roomId);
-      console.log('Modal state updated:', true);
       return;
     }
 
@@ -682,7 +679,6 @@ function ChatRoomsComponent() {
               hasMore={hasMore}
               rooms={rooms}
             >
-              {console.log('Rooms passed to TableWrapper:', rooms)}
               <HScrollTable {...tableInstance.getTableProps()} />
             </TableWrapper>
           ) : (
@@ -707,7 +703,7 @@ function ChatRoomsComponent() {
       >
         <div className="modal-content">
           <h2>비밀번호 입력</h2>
-          <input
+          <Input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

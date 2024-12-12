@@ -6,7 +6,6 @@ const SessionService = require('../services/sessionService');
 const authController = {
   async register(req, res) {
     try {
-      console.log('Register request received:', req.body);
       
       const { name, email, password } = req.body;
 
@@ -49,7 +48,6 @@ const authController = {
       });
 
       await user.save();
-      console.log('User created:', user._id);
 
       // Create session with metadata
       const sessionInfo = await SessionService.createSession(user._id, {
@@ -338,7 +336,6 @@ const authController = {
       const sessionId = req.header('x-session-id');
 
       if (!token || !sessionId) {
-        console.log('Missing token or sessionId:', { token: !!token, sessionId: !!sessionId });
         return res.status(401).json({
           success: false,
           message: '인증 정보가 제공되지 않았습니다.'
@@ -375,7 +372,6 @@ const authController = {
       // 세션 검증
       const validationResult = await SessionService.validateSession(user._id, sessionId);
       if (!validationResult.isValid) {
-        console.log('Invalid session:', validationResult);
         return res.status(401).json({
           success: false,
           code: validationResult.error,
@@ -385,8 +381,6 @@ const authController = {
 
       // 세션 갱신
       await SessionService.refreshSession(user._id, sessionId);
-
-      console.log('Token verification successful for user:', user._id);
 
       // 프로필 업데이트 필요 여부 확인
       if (validationResult.needsProfileRefresh) {

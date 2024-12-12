@@ -45,4 +45,4 @@ if (fs.existsSync(outputFilePath)) {
 // 현재 디렉토리에서 시작, node_modules, logs, .next 디렉토리 제외
 scanDirectory(__dirname, ['node_modules', 'logs', '.next', 'uploads', 'chat-app', 'images', 'build', 'public', 'e2e']);
 
-console.log(`Source codes have been saved to ${outputFilePath}`);
+
