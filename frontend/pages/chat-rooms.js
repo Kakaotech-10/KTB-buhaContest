@@ -184,6 +184,7 @@ function ChatRoomsComponent() {
   // Refs
   const socketRef = useRef(null);
   const isLoadingRef = useRef(false);
+  const connectionCheckTimerRef = useRef(null);
 
   const getRetryDelay = useCallback((retryCount) => {
     const delay =
@@ -364,10 +365,35 @@ function ChatRoomsComponent() {
   }, [pageIndex, fetchRooms]);
 
   useEffect(() => {
-    if (currentUser) {
-      fetchRooms(false);
-    }
-  }, [currentUser, fetchRooms]);
+    if (!currentUser) return;
+
+    const initFetch = async () => {
+      try {
+        await fetchRooms(false);
+      } catch (error) {
+        console.error('Initial fetch failed:', error);
+        setTimeout(() => {
+          if (connectionStatus === CONNECTION_STATUS.CHECKING) {
+            fetchRooms(false);
+          }
+        }, 3000);
+      }
+    };
+
+    initFetch();
+
+    connectionCheckTimerRef.current = setInterval(() => {
+      if (connectionStatus === CONNECTION_STATUS.CHECKING) {
+        attemptConnection();
+      }
+    }, 5000);
+
+    return () => {
+      if (connectionCheckTimerRef.current) {
+        clearInterval(connectionCheckTimerRef.current);
+      }
+    };
+  }, [currentUser, connectionStatus, attemptConnection, fetchRooms]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -508,7 +534,6 @@ function ChatRoomsComponent() {
   }, [currentUser, handleAuthError]);
 
   const handleJoinRoom = async (roomId, hasPassword) => {
-
     if (connectionStatus !== CONNECTION_STATUS.CONNECTED) {
       setError({
         title: '채팅방 입장 실패',
